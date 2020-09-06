@@ -15,6 +15,7 @@ pub mod util {
         bodies::Position,
         nalgebra::{Isometry2, RealField},
     };
+    use nalgebra::Vector2;
 
     pub struct SimplePosition<N: RealField>(pub Isometry2<N>);
 
@@ -36,6 +37,19 @@ pub mod util {
 
     impl<N: RealField> Component for SimplePosition<N> {
         type Storage = FlaggedStorage<Self, DenseVecStorage<Self>>;
+    }
+
+    impl<N: RealField> Default for SimplePosition<N> {
+        fn default() -> Self {
+            SimplePosition {
+                0: Isometry2::new(
+                    Vector2::new(
+                        N::from_f32(0.0).unwrap(),
+                        N::from_f32(0.0).unwrap(),
+                    ),
+                    N::from_f32(0.0).unwrap()),
+            }
+        }
     }
 }
 
