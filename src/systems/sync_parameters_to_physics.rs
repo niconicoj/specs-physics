@@ -83,7 +83,7 @@ mod tests {
     use specs::prelude::*;
 
     use crate::{
-        nalgebra::Vector3,
+        nalgebra::Vector2,
         parameters::Gravity,
         systems::SyncParametersToPhysicsSystem,
         Physics,
@@ -101,12 +101,11 @@ mod tests {
             .build();
         dispatcher.setup(&mut world);
 
-        world.insert(Gravity(Vector3::<f32>::new(1.0, 2.0, 3.0)));
+        world.insert(Gravity(Vector2::<f32>::new(1.0, 2.0)));
         dispatcher.dispatch(&world);
 
         let physics = world.read_resource::<Physics<f32>>();
         assert_ulps_eq!(physics.mechanical_world.gravity.x, 1.0);
         assert_ulps_eq!(physics.mechanical_world.gravity.y, 2.0);
-        assert_ulps_eq!(physics.mechanical_world.gravity.z, 3.0);
     }
 }

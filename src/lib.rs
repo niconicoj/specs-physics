@@ -43,24 +43,24 @@
 //!
 //! ```rust
 //! use specs::{Component, DenseVecStorage, FlaggedStorage};
-//! use specs_physics::{bodies::Position, nalgebra::Isometry3};
+//! use specs_physics::{bodies::Position, nalgebra::Isometry2};
 //!
-//! struct Pos(pub Isometry3<f32>);
+//! struct Pos(pub Isometry2<f32>);
 //!
 //! impl Component for Pos {
 //!     type Storage = FlaggedStorage<Self, DenseVecStorage<Self>>;
 //! }
 //!
 //! impl Position<f32> for Pos {
-//!     fn isometry(&self) -> &Isometry3<f32> {
+//!     fn isometry(&self) -> &Isometry2<f32> {
 //!         &self.0
 //!     }
 //!
-//!     fn isometry_mut(&mut self) -> &mut Isometry3<f32> {
+//!     fn isometry_mut(&mut self) -> &mut Isometry2<f32> {
 //!         &mut self.0
 //!     }
 //!
-//!     fn set_isometry(&mut self, isometry: &Isometry3<f32>) -> &mut Pos {
+//!     fn set_isometry(&mut self, isometry: &Isometry2<f32>) -> &mut Pos {
 //!         self.0 = *isometry;
 //!         self
 //!     }
@@ -87,17 +87,17 @@
 //!
 //! ```rust
 //! use specs_physics::{
-//!     nalgebra::{Matrix3, Point3},
-//!     nphysics::{algebra::Velocity3, object::BodyStatus},
+//!     nalgebra::{Matrix2, Point2},
+//!     nphysics::{algebra::Velocity2, object::BodyStatus},
 //!     PhysicsBodyBuilder,
 //! };
 //!
 //! let physics_body = PhysicsBodyBuilder::from(BodyStatus::Dynamic)
 //!     .gravity_enabled(true)
-//!     .velocity(Velocity3::linear(1.0, 1.0, 1.0))
-//!     .angular_inertia(Matrix3::from_diagonal_element(3.0))
+//!     .velocity(Velocity2::linear(1.0, 1.0))
+//!     .angular_inertia(3.0)
 //!     .mass(1.3)
-//!     .local_center_of_mass(Point3::new(0.0, 0.0, 0.0))
+//!     .local_center_of_mass(Point2::new(0.0, 0.0))
 //!     .build();
 //! ```
 //!
@@ -113,15 +113,15 @@
 //! ```rust
 //! use specs_physics::{
 //!     colliders::Shape,
-//!     nalgebra::{Isometry3, Vector3},
+//!     nalgebra::{Isometry2, Vector2},
 //!     ncollide::pipeline::CollisionGroups,
 //!     nphysics::material::{BasicMaterial, MaterialHandle},
 //!     PhysicsColliderBuilder,
 //! };
 //!
 //! let physics_collider = PhysicsColliderBuilder::from(
-//!         Shape::Cuboid{ half_extents: Vector3::new(10.0, 10.0, 1.0) })
-//!     .offset_from_parent(Isometry3::identity())
+//!         Shape::Cuboid{ half_extents: Vector2::new(10.0, 10.0) })
+//!     .offset_from_parent(Isometry2::identity())
 //!     .density(1.2)
 //!     .material(MaterialHandle::new(BasicMaterial::default()))
 //!     .margin(0.02)
@@ -243,8 +243,8 @@
 extern crate log;
 
 pub use nalgebra;
-pub use ncollide3d as ncollide;
-pub use nphysics3d as nphysics;
+pub use ncollide2d as ncollide;
+pub use nphysics2d as nphysics;
 pub use shrev;
 
 use std::collections::HashMap;
@@ -267,7 +267,7 @@ pub use self::{
 
 use self::{
     bodies::Position,
-    nalgebra::{RealField, Vector3},
+    nalgebra::{RealField, Vector2},
     nphysics::{
         counters::Counters,
         force_generator::DefaultForceGeneratorSet,
@@ -334,7 +334,7 @@ impl<N: RealField> Physics<N> {
 
     /// Reports the internal value for the gravity.
     /// See also `Gravity` for setting this value.
-    pub fn gravity(&self) -> &Vector3<N> {
+    pub fn gravity(&self) -> &Vector2<N> {
         &self.mechanical_world.gravity
     }
 
@@ -363,7 +363,7 @@ impl<N: RealField> Default for Physics<N> {
         let mut bodies = DefaultBodySet::new();
         let ground = bodies.insert(Ground::new());
         Self {
-            mechanical_world: DefaultMechanicalWorld::new(Vector3::zeros()),
+            mechanical_world: DefaultMechanicalWorld::new(Vector2::zeros()),
             geometrical_world: DefaultGeometricalWorld::new(),
             bodies,
             ground,

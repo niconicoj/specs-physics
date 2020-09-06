@@ -5,8 +5,8 @@ extern crate simple_logger;
 use specs::{Builder, World, WorldExt};
 use specs_physics::{
     colliders::Shape,
-    nalgebra::{Isometry3, Vector3},
-    nphysics::{algebra::Velocity3, object::BodyStatus},
+    nalgebra::{Isometry2, Vector2},
+    nphysics::{algebra::Velocity2, object::BodyStatus},
     physics_dispatcher,
     PhysicsBodyBuilder,
     PhysicsColliderBuilder,
@@ -15,7 +15,7 @@ use specs_physics::{
 
 fn main() {
     // initialise the logger for system logs
-    simple_logger::init().unwrap();
+    simple_logger::SimpleLogger::new();
 
     // initialise the Specs world; this will contain our Resources and Entities
     let mut world = World::new();
@@ -28,17 +28,17 @@ fn main() {
     // create an Entity with a dynamic PhysicsBody component and a velocity
     let entity = world
         .create_entity()
-        .with(SimplePosition::<f32>(Isometry3::<f32>::translation(
-            1.0, 1.0, 1.0,
+        .with(SimplePosition::<f32>(Isometry2::<f32>::translation(
+            1.0, 1.0,
         )))
         .with(
             PhysicsBodyBuilder::<f32>::from(BodyStatus::Dynamic)
-                .velocity(Velocity3::linear(1.0, 0.0, 0.0))
+                .velocity(Velocity2::linear(1.0, 0.0))
                 .build(),
         )
         .with(
             PhysicsColliderBuilder::<f32>::from(Shape::Cuboid {
-                half_extents: Vector3::new(1.9, 2.0, 1.0),
+                half_extents: Vector2::new(1.9, 2.0),
             })
             .margin(0.1)
             .build(),
@@ -49,13 +49,13 @@ fn main() {
     // one
     world
         .create_entity()
-        .with(SimplePosition::<f32>(Isometry3::<f32>::translation(
-            5.0, 1.0, 1.0,
+        .with(SimplePosition::<f32>(Isometry2::<f32>::translation(
+            5.0, 1.0,
         )))
         .with(PhysicsBodyBuilder::<f32>::from(BodyStatus::Static).build())
         .with(
             PhysicsColliderBuilder::<f32>::from(Shape::Cuboid {
-                half_extents: Vector3::new(1.9, 2.0, 1.0),
+                half_extents: Vector2::new(1.9, 2.0,),
             })
             .margin(0.1)
             .build(),

@@ -264,7 +264,7 @@ mod tests {
 
     use crate::{
         colliders::Shape,
-        nalgebra::Isometry3,
+        nalgebra::Isometry2,
         systems::SyncCollidersToPhysicsSystem,
         Physics,
         PhysicsColliderBuilder,
@@ -287,8 +287,8 @@ mod tests {
         // dispatcher
         world
             .create_entity()
-            .with(SimplePosition::<f32>(Isometry3::<f32>::translation(
-                1.0, 1.0, 1.0,
+            .with(SimplePosition::<f32>(Isometry2::<f32>::translation(
+                1.0, 1.0,
             )))
             .with(PhysicsColliderBuilder::<f32>::from(Shape::Ball { radius: 5.0 }).build())
             .build();

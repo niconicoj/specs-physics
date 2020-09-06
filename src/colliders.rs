@@ -3,22 +3,11 @@ use std::{f32::consts::PI, fmt, ops::Deref};
 use specs::{Component, DenseVecStorage, FlaggedStorage};
 
 use crate::{
-    nalgebra::{DMatrix, Isometry3, Point2, Point3, RealField, Unit, Vector3},
+    nalgebra::{DVector, Isometry2, Point2, RealField, Unit, Vector2},
     ncollide::{
         pipeline::CollisionGroups,
         shape::{
-            Ball,
-            Capsule,
-            Compound,
-            ConvexHull,
-            Cuboid,
-            HeightField,
-            Plane,
-            Polyline,
-            Segment,
-            ShapeHandle,
-            TriMesh,
-            Triangle,
+            Ball, Capsule, Compound, Cuboid, HeightField, Plane, Polyline, Segment, ShapeHandle,
         },
     },
     nphysics::{
@@ -26,8 +15,9 @@ use crate::{
         object::DefaultColliderHandle,
     },
 };
+use ncollide2d::shape::ConvexPolygon;
 
-pub type MeshData<N> = (Vec<Point3<N>>, Vec<Point3<usize>>, Option<Vec<Point2<N>>>);
+pub type MeshData<N> = (Vec<Point2<N>>, Vec<Point2<usize>>, Option<Vec<Point2<N>>>);
 
 pub trait IntoMesh: objekt::Clone + Send + Sync {
     type N: RealField;
@@ -62,36 +52,30 @@ pub enum Shape<N: RealField> {
         radius: N,
     },
     Compound {
-        parts: Vec<(Isometry3<N>, Shape<N>)>,
-    },
-    ConvexHull {
-        points: Vec<Point3<N>>,
+        parts: Vec<(Isometry2<N>, Shape<N>)>,
     },
     Cuboid {
-        half_extents: Vector3<N>,
+        half_extents: Vector2<N>,
     },
     HeightField {
-        heights: DMatrix<N>,
-        scale: Vector3<N>,
+        heights: DVector<N>,
+        scale: Vector2<N>,
     },
     Plane {
-        normal: Unit<Vector3<N>>,
+        normal: Unit<Vector2<N>>,
     },
     Polyline {
-        points: Vec<Point3<N>>,
+        points: Vec<Point2<N>>,
         indices: Option<Vec<Point2<usize>>>,
     },
     Segment {
-        a: Point3<N>,
-        b: Point3<N>,
-    },
-    TriMesh {
-        handle: Box<dyn IntoMesh<N = N>>,
+        a: Point2<N>,
+        b: Point2<N>,
     },
     Triangle {
-        a: Point3<N>,
-        b: Point3<N>,
-        c: Point3<N>,
+        a: Point2<N>,
+        b: Point2<N>,
+        c: Point2<N>,
     },
 }
 
@@ -109,10 +93,6 @@ impl<N: RealField> Shape<N> {
             Shape::Compound { parts } => ShapeHandle::new(Compound::new(
                 parts.iter().map(|part| (part.0, part.1.handle())).collect(),
             )),
-            Shape::ConvexHull { points } => ShapeHandle::new(
-                ConvexHull::try_from_points(&points)
-                    .expect("Failed to generate Convex Hull from points."),
-            ),
             Shape::Cuboid { half_extents } => ShapeHandle::new(Cuboid::new(*half_extents)),
             Shape::HeightField { heights, scale } => {
                 ShapeHandle::new(HeightField::new(heights.clone(), *scale))
@@ -122,11 +102,9 @@ impl<N: RealField> Shape<N> {
                 ShapeHandle::new(Polyline::new(points.clone(), indices.clone()))
             }
             Shape::Segment { a, b } => ShapeHandle::new(Segment::new(*a, *b)),
-            Shape::TriMesh { handle } => {
-                let data = handle.points();
-                ShapeHandle::new(TriMesh::new(data.0, data.1, data.2))
+            Shape::Triangle { a, b, c } => {
+                ShapeHandle::new(ConvexPolygon::try_from_points(&[*a, *b, *c]).unwrap())
             }
-            Shape::Triangle { a, b, c } => ShapeHandle::new(Triangle::new(*a, *b, *c)),
         }
     }
 }
@@ -143,7 +121,7 @@ pub struct PhysicsCollider<N: RealField> {
     pub shape: Shape<N>,
     /// The position/rotation offset of the collider from the entity it is
     /// attached to.
-    pub offset_from_parent: Isometry3<N>,
+    pub offset_from_parent: Isometry2<N>,
     pub density: N,
     /// The physics material of which this collider is composed.
     /// Defines properties like bounciness and others.
@@ -211,14 +189,14 @@ impl<N: RealField> PhysicsCollider<N> {
 /// ```rust
 /// use specs_physics::{
 ///     colliders::Shape,
-///     nalgebra::{Isometry3, Vector3},
+///     nalgebra::{Isometry2, Vector2},
 ///     ncollide::pipeline::CollisionGroups,
 ///     nphysics::material::{BasicMaterial, MaterialHandle},
 ///     PhysicsColliderBuilder,
 /// };
 ///
-/// let physics_collider = PhysicsColliderBuilder::from(Shape::Cuboid{ half_extents: Vector3::new(10.0, 10.0, 1.0) })
-///     .offset_from_parent(Isometry3::identity())
+/// let physics_collider = PhysicsColliderBuilder::from(Shape::Cuboid{ half_extents: Vector2::new(10.0, 10.0) })
+///     .offset_from_parent(Isometry2::identity())
 ///     .density(1.2)
 ///     .material(MaterialHandle::new(BasicMaterial::default()))
 ///     .margin(0.02)
@@ -230,7 +208,7 @@ impl<N: RealField> PhysicsCollider<N> {
 /// ```
 pub struct PhysicsColliderBuilder<N: RealField> {
     shape: Shape<N>,
-    offset_from_parent: Isometry3<N>,
+    offset_from_parent: Isometry2<N>,
     density: N,
     material: MaterialHandle<N>,
     margin: N,
@@ -246,7 +224,7 @@ impl<N: RealField> From<Shape<N>> for PhysicsColliderBuilder<N> {
     fn from(shape: Shape<N>) -> Self {
         Self {
             shape,
-            offset_from_parent: Isometry3::identity(),
+            offset_from_parent: Isometry2::identity(),
             density: N::from_f32(1.3).unwrap(),
             material: MaterialHandle::new(BasicMaterial::default()),
             margin: N::from_f32(0.2).unwrap(), // default was: 0.01
@@ -260,7 +238,7 @@ impl<N: RealField> From<Shape<N>> for PhysicsColliderBuilder<N> {
 
 impl<N: RealField> PhysicsColliderBuilder<N> {
     /// Sets the `offset_from_parent` value of the `PhysicsColliderBuilder`.
-    pub fn offset_from_parent(mut self, offset_from_parent: Isometry3<N>) -> Self {
+    pub fn offset_from_parent(mut self, offset_from_parent: Isometry2<N>) -> Self {
         self.offset_from_parent = offset_from_parent;
         self
     }
