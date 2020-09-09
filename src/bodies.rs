@@ -94,7 +94,8 @@ impl<N: RealField> PhysicsBody<N> {
     }
 
     pub fn apply_external_force(&mut self, force: &Force2<N>) -> &mut Self {
-        self.external_forces += *force;
+        // testing without compounding every forces applied
+        self.external_forces = *force;
         self
     }
 
