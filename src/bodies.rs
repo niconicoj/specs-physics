@@ -1,3 +1,4 @@
+use nalgebra::Vector2;
 use specs::{Component, DenseVecStorage, FlaggedStorage};
 
 use crate::{
@@ -82,6 +83,7 @@ pub struct PhysicsBody<N: RealField> {
     pub local_center_of_mass: Point2<N>,
     pub rotations_kinematic: bool,
     external_forces: Force2<N>,
+    pub translations_kinematic: Vector2<bool>,
 }
 
 impl<N: RealField> Component for PhysicsBody<N> {
@@ -94,8 +96,7 @@ impl<N: RealField> PhysicsBody<N> {
     }
 
     pub fn apply_external_force(&mut self, force: &Force2<N>) -> &mut Self {
-        // testing without compounding every forces applied
-        self.external_forces = *force;
+        self.external_forces += *force;
         self
     }
 
@@ -120,6 +121,7 @@ impl<N: RealField> PhysicsBody<N> {
         rigid_body.set_local_center_of_mass(self.local_center_of_mass);
         rigid_body.apply_force(0, &self.drain_external_force(), ForceType::Force, true);
         rigid_body.set_rotations_kinematic(self.rotations_kinematic);
+        rigid_body.set_translations_kinematic(self.translations_kinematic);
         self
     }
 
@@ -172,6 +174,8 @@ pub struct PhysicsBodyBuilder<N: RealField> {
     mass: N,
     local_center_of_mass: Point2<N>,
     rotations_kinematic: bool,
+    translations_kinematic: Vector2<bool>,
+
 }
 
 impl<N: RealField> From<BodyStatus> for PhysicsBodyBuilder<N> {
@@ -186,6 +190,7 @@ impl<N: RealField> From<BodyStatus> for PhysicsBodyBuilder<N> {
             mass: N::from_f32(1.2).unwrap(),
             local_center_of_mass: Point2::origin(),
             rotations_kinematic: false,
+            translations_kinematic: Vector2::new(false, false),
         }
     }
 }
@@ -231,6 +236,15 @@ impl<N: RealField> PhysicsBodyBuilder<N> {
         self
     }
 
+    pub fn translations_kinematic(mut self, translations_kinematic: Vector2<bool>) -> Self {
+        self.translations_kinematic = translations_kinematic;
+        self
+    }
+
+    pub fn lock_translations(mut self, lock_translations: Vector2<bool>) -> Self {
+        self.translations_kinematic = lock_translations;
+        self
+    }
     /// Builds the `PhysicsBody` from the values set in the `PhysicsBodyBuilder`
     /// instance.
     pub fn build(self) -> PhysicsBody<N> {
@@ -244,6 +258,7 @@ impl<N: RealField> PhysicsBodyBuilder<N> {
             local_center_of_mass: self.local_center_of_mass,
             external_forces: Force2::zero(),
             rotations_kinematic: self.rotations_kinematic,
+            translations_kinematic: self.translations_kinematic,
         }
     }
 }
